@@ -27,7 +27,7 @@ preset_locations = {
 }
 
 # API configuration
-API_KEY = '9106e00acbe0c72f0d04e9f21c4bf5c8'
+API_KEY = "9106e00acbe0c72f0d04e9f21c4bf5c8"
 BASE_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
 # Function to fetch weather data with better error handling
