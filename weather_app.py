@@ -15,7 +15,7 @@ st.title("🌤️ 7-Day Weather Forecast")
 st.markdown("Enter a city name to get the current weather and 7-day forecast.")
 
 # API configuration (using OpenWeatherMap free tier)
-API_KEY = "5bcef9834ae101ce80206cc74726f8ae"
+API_KEY = "9106e00acbe0c72f0d04e9f21c4bf5c8"
 BASE_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
 # Function to fetch weather data
