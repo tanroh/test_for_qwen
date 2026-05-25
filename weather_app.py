@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import os
 import pandas as pd
 from datetime import datetime
 
@@ -27,7 +28,9 @@ preset_locations = {
 }
 
 # API configuration - get from Streamlit secrets
-API_KEY = st.secrets.get("OPENWEATHER_API_KEY", None)
+# API_KEY = st.secrets.get("OPENWEATHER_API_KEY", None)
+API_KEY = os.environ.get("OPENWEATHER_API_KEY", None)
+
 if not API_KEY:
     # Try alternative method for accessing secrets
     try:
