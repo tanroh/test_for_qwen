@@ -2,8 +2,6 @@ import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime
-import asyncio
-import aiohttp
 
 # Set page configuration
 st.set_page_config(
@@ -28,8 +26,15 @@ preset_locations = {
     "Moscow": {"lat": 55.7558, "lon": 37.6173}
 }
 
-# API configuration
-API_KEY = st.secrets.get("OPENWEATHER_API_KEY", "YOUR_API_KEY_HERE")
+# API configuration - get from Streamlit secrets
+API_KEY = st.secrets.get("OPENWEATHER_API_KEY", None)
+if not API_KEY:
+    # Try alternative method for accessing secrets
+    try:
+        API_KEY = st.secrets["OPENWEATHER_API_KEY"]
+    except Exception as e:
+        API_KEY = "YOUR_API_KEY_HERE"
+
 BASE_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
 # Function to fetch weather data with better error handling and caching
@@ -86,32 +91,6 @@ def process_forecast_data(raw_data):
     
     # Create DataFrame once, not for each row
     return pd.DataFrame(processed_data)
-
-# Function to fetch weather data using asyncio (for advanced optimization)
-async def async_get_weather_data(city):
-    try:
-        params = {
-            'q': city,
-            'appid': API_KEY,
-            'units': 'metric'
-        }
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.get(BASE_URL, params=params) as response:
-                if response.status == 200:
-                    return await response.json()
-                elif response.status == 401:
-                    st.error("Authentication failed. Please check your OpenWeatherMap API key.")
-                    st.error("You can get a free API key at: https://openweathermap.org/api")
-                    return None
-                else:
-                    text = await response.text()
-                    st.error(f"Error {response.status}: Failed to fetch weather data")
-                    return None
-                    
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {str(e)}")
-        return None
 
 # Sidebar with preset location buttons
 st.sidebar.header("📍 Quick Locations")
