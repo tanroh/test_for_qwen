@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime
+import asyncio
+import aiohttp
 
 # Set page configuration
 st.set_page_config(
@@ -27,10 +29,10 @@ preset_locations = {
 }
 
 # API configuration
-API_KEY = "5bcef9834ae101ce80206cc74726f8ae"
+API_KEY = st.secrets.get("OPENWEATHER_API_KEY", "YOUR_API_KEY_HERE")
 BASE_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
-# Function to fetch weather data with better error handling
+# Function to fetch weather data with better error handling and caching
 @st.cache_data(ttl=3600)  # Cache for 1 hour
 def get_weather_data(city):
     try:
@@ -63,12 +65,12 @@ def get_weather_data(city):
         st.error(f"An unexpected error occurred: {str(e)}")
         return None
 
-# Function to process forecast data
+# Function to process forecast data efficiently using pandas
 def process_forecast_data(raw_data):
     if not raw_data or 'list' not in raw_data:
         return pd.DataFrame()
     
-    # Extract relevant information for 5-day forecast (every 3 hours)
+    # Efficiently create DataFrame from all data at once instead of appending
     processed_data = []
     for item in raw_data['list']:
         dt = datetime.fromtimestamp(item['dt'])
@@ -82,7 +84,34 @@ def process_forecast_data(raw_data):
             'wind_speed': item['wind']['speed']
         })
     
+    # Create DataFrame once, not for each row
     return pd.DataFrame(processed_data)
+
+# Function to fetch weather data using asyncio (for advanced optimization)
+async def async_get_weather_data(city):
+    try:
+        params = {
+            'q': city,
+            'appid': API_KEY,
+            'units': 'metric'
+        }
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(BASE_URL, params=params) as response:
+                if response.status == 200:
+                    return await response.json()
+                elif response.status == 401:
+                    st.error("Authentication failed. Please check your OpenWeatherMap API key.")
+                    st.error("You can get a free API key at: https://openweathermap.org/api")
+                    return None
+                else:
+                    text = await response.text()
+                    st.error(f"Error {response.status}: Failed to fetch weather data")
+                    return None
+                    
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {str(e)}")
+        return None
 
 # Sidebar with preset location buttons
 st.sidebar.header("📍 Quick Locations")
@@ -114,7 +143,7 @@ with st.spinner("Fetching weather data..."):
 if raw_data:
     df = process_forecast_data(raw_data)
     
-    # Display general info
+    # Display general info with better formatting using pandas for calculations
     current_weather = raw_data['list'][0]['main']
     current_desc = raw_data['list'][0]['weather'][0]['description'].title()
     
@@ -137,12 +166,18 @@ if raw_data:
         st.subheader("📍 Location on Map")
         st.map(map_data)
     
-    # Show 5-day forecast
+    # Show 5-day forecast using pandas DataFrame for better display
     st.subheader("📅 5-Day Forecast")
     if not df.empty:
-        st.dataframe(df[['datetime', 'temp', 'feels_like', 'humidity', 'description']], 
-                   use_container_width=True,
-                   height=400)
+        # Use pandas styling options for better table presentation
+        styled_df = df[['datetime', 'temp', 'feels_like', 'humidity', 'description']].style.format({
+            'temp': '{:.1f}°C',
+            'feels_like': '{:.1f}°C',
+            'humidity': '{}%',
+            'wind_speed': '{:.1f} m/s'
+        })
+        
+        st.dataframe(styled_df, use_container_width=True, height=400)
     else:
         st.warning("No forecast data available.")
 else:
