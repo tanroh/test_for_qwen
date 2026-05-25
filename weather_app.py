@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import os
 import pandas as pd
 from datetime import datetime
 
@@ -27,16 +26,17 @@ preset_locations = {
     "Moscow": {"lat": 55.7558, "lon": 37.6173}
 }
 
-# API configuration - get from Streamlit secrets
-API_KEY = st.secrets.get("OPENWEATHER_API_KEY", None)
-# API_KEY = os.environ.get("OPENWEATHER_API_KEY", None)
+# For local testing - fallback to environment variable or hardcoded key
+import os
 
+API_KEY = st.secrets.get("OPENWEATHER_API_KEY", None)
 if not API_KEY:
-    # Try alternative method for accessing secrets
-    try:
-        API_KEY = st.secrets["OPENWEATHER_API_KEY"]
-    except Exception as e:
-        API_KEY = "YOUR_API_KEY_HERE"
+    # Try getting from environment variable
+    API_KEY = os.environ.get("OPENWEATHER_API_KEY")
+    
+# If still no key, use a placeholder for testing
+if not API_KEY:
+    API_KEY = "5bcef9834ae101ce80206cc74726f8ae"  # Your provided test key
 
 BASE_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
@@ -78,7 +78,7 @@ def process_forecast_data(raw_data):
     if not raw_data or 'list' not in raw_data:
         return pd.DataFrame()
     
-    # Efficiently create DataFrame from all data at once instead of appending
+    # Efficiently create DataFrame from all data at once
     processed_data = []
     for item in raw_data['list']:
         dt = datetime.fromtimestamp(item['dt'])
@@ -92,7 +92,7 @@ def process_forecast_data(raw_data):
             'wind_speed': item['wind']['speed']
         })
     
-    # Create DataFrame once, not for each row
+    # Create DataFrame once
     return pd.DataFrame(processed_data)
 
 # Sidebar with preset location buttons
@@ -125,7 +125,7 @@ with st.spinner("Fetching weather data..."):
 if raw_data:
     df = process_forecast_data(raw_data)
     
-    # Display general info with better formatting using pandas for calculations
+    # Display general info 
     current_weather = raw_data['list'][0]['main']
     current_desc = raw_data['list'][0]['weather'][0]['description'].title()
     
@@ -168,5 +168,5 @@ else:
 # Instructions for the user
 st.markdown("---")
 st.info("**Note**: This app uses OpenWeatherMap API. To get your own API key, visit [https://openweathermap.org/api](https://openweathermap.org/api)")
-if API_KEY == "YOUR_API_KEY_HERE":
-    st.warning("⚠️ Please replace 'YOUR_API_KEY_HERE' with your actual OpenWeatherMap API key in the code or in Streamlit secrets.")
+if API_KEY == "5bcef9834ae101ce80206cc74726f8ae":
+    st.warning("⚠️ You're using a test API key. For production use, please set up your own API key in Streamlit secrets.")
