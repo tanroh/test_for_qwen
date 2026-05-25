@@ -28,9 +28,8 @@ preset_locations = {
 }
 
 # API configuration - get from Streamlit secrets
-# API_KEY = st.secrets.get("OPENWEATHER_API_KEY", None)
+API_KEY = st.secrets.get("OPENWEATHER_API_KEY", None)
 # API_KEY = os.environ.get("OPENWEATHER_API_KEY", None)
-API_KEY = '5bcef9834ae101ce80206cc74726f8ae'
 
 if not API_KEY:
     # Try alternative method for accessing secrets
